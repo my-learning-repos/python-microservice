@@ -12,7 +12,7 @@ class AbstractRepository(abc.ABC):
         raise NotImplementedError
 
 
-class SqlRepository(AbstractRepository):
+class SqlAlchemyRepository(AbstractRepository):
     def __init__(self, session):
         self.session = session
 
@@ -21,3 +21,6 @@ class SqlRepository(AbstractRepository):
 
     def get(self, reference) -> model.Batch:
         return self.session.query(model.Batch).filter_by(reference=reference).first()
+
+    def list(self):
+        return self.session.query(model.Batch).all()
