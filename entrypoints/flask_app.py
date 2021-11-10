@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 import config
 from domain import model
 from adapters import orm, repository
-from service_layer import services
+from service_layer import services, unit_of_work
 
 orm.start_mappers()
 get_session = sessionmaker(bind=create_engine(config.get_postgres_uri()))
@@ -24,7 +24,8 @@ def allocate_endpoint():
         batchref = services.allocate(request.json["order_id"],
                                      request.json["sku"],
                                      request.json["quantity"],
-                                     repo, session)
+                                     unit_of_work.SqlAlchemyUnitOfWork(),
+                                     )
     except (model.OutOfStock, services.InvalidSku) as e:
         return {"message": str(e)}, 400
 
@@ -43,7 +44,6 @@ def add_batch():
         request.json["sku"],
         request.json["quantity"],
         eta,
-        repo,
-        session
+        unit_of_work.SqlAlchemyUnitOfWork()
     )
     return "OK", 201

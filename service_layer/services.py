@@ -6,6 +6,7 @@ from typing import Optional
 from domain import model
 from domain.model import OrderLine
 from adapters.repository import AbstractRepository
+from service_layer import unit_of_work
 
 
 class InvalidSku(Exception):
@@ -21,24 +22,26 @@ def add_batch(
         sku: str,
         quantity: int,
         eta: Optional[date],
-        repo: AbstractRepository,
-        session
+        uow: unit_of_work.AbstractUnitOfWork,
+
 ) -> None:
-    repo.add(model.Batch(ref, sku, quantity, eta))
-    session.commit()
+    with uow:
+        uow.batches.add(model.Batch(ref, sku, quantity, eta))
+        uow.commit()
 
 
 def allocate(
         order_id: int,
         sku: str,
         quantity: int,
-        repo: AbstractRepository,
-        session
+        uow: unit_of_work.AbstractUnitOfWork,
+
 ) -> str:
     line = model.OrderLine(order_id, sku, quantity)
-    batches = repo.list()
-    if not is_valid_sku(line.sku, batches):
-        raise InvalidSku(f"Invalid sku {line.sku}")
-    batchref = model.allocate(line, batches)
-    session.commit()
+    with uow:
+        batches = uow.batches.list()
+        if not is_valid_sku(line.sku, batches):
+            raise InvalidSku(f"Invalid sku {line.sku}")
+        batchref = model.allocate(line, batches)
+        uow.commit()
     return batchref
