@@ -1,12 +1,16 @@
 import pytest
+from requests.exceptions import ConnectionError
 import requests
 from pathlib import Path
 import time
+
+from sqlalchemy.exc import OperationalError
+
 import config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, clear_mappers
 
-from orm import metadata, start_mappers
+from adapters.orm import metadata, start_mappers
 
 @pytest.fixture
 def in_memory_db():
@@ -42,7 +46,7 @@ def wait_for_postgres_to_come_up(engine):
             return engine.connect()
         except OperationalError:
             time.sleep(0.5)
-        pytest.fail("Postgres never came up")
+    pytest.fail("Postgres never came up")
 
 @pytest.fixture(scope="session")
 def postgres_db():
@@ -96,6 +100,6 @@ def add_stock(postgres_session):
 
 @pytest.fixture
 def restart_api():
-    (Path(__file__).parent/"flask_app.py").touch()
+    (Path(__file__).parent/"../entrypoints/flask_app.py").touch()
     time.sleep(0.5)
     wait_for_webapp_to_come_up()

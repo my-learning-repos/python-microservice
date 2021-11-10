@@ -1,5 +1,6 @@
-import model
-import repository
+from domain import model
+from adapters import repository
+
 
 def test_repository_can_save_a_batch(session):
     batch = model.Batch("batch1", "RUSTY-SOAPDISH", 100, eta=None)
@@ -12,7 +13,7 @@ def test_repository_can_save_a_batch(session):
     rows = session.execute(
         'SELECT reference, sku, _purchased_quantity, eta FROM "batches"'
     )
-    assert list(rows) == [("batch1", "RUSTY-SOAPDISH",100,None)]
+    assert list(rows) == [("batch1", "RUSTY-SOAPDISH", 100, None)]
 
 
 def insert_order_line(session):
@@ -39,12 +40,14 @@ def insert_batch(session, batch_id):
     )
     return batch_id
 
+
 def insert_allocation(session, order_line_id, batch_id):
     session.execute(
         "INSERT INTO allocations (order_line_id, batch_id)"
         " VALUES (:order_line_id, :batch_id)",
         dict(order_line_id=order_line_id, batch_id=batch_id),
     )
+
 
 def test_repository_can_retrieve_a_batch_with_allocations(session):
     order_line_id = insert_order_line(session)
@@ -62,7 +65,7 @@ def test_repository_can_retrieve_a_batch_with_allocations(session):
     assert retrieved.sku == expected.sku
     assert retrieved._purchased_quantity == expected._purchased_quantity
     assert retrieved._allocations == {
-            model.OrderLine("order1", "GENERIC-SOFA", 12),
+        model.OrderLine("order1", "GENERIC-SOFA", 12),
     }
 
 
@@ -76,15 +79,16 @@ def get_allocations(session, batch_id):
             dict(batch_id=batch_id)
         )
     )
-    return {row[0] for row in rows }
+    return {row[0] for row in rows}
+
 
 def test_updating_a_batch(session):
-    order1 = model.OrderLine("order1", "WEATHERED-BENCH",10)
+    order1 = model.OrderLine("order1", "WEATHERED-BENCH", 10)
     order2 = model.OrderLine("order2", "WEATHERED-BENCH", 20)
     batch = model.Batch("batch1", "WEATHERED-BENCH", 100, eta=None)
 
     batch.allocate(order1)
-    repo= repository.SqlAlchemyRepository(session)
+    repo = repository.SqlAlchemyRepository(session)
     repo.add(batch)
     session.commit()
 
