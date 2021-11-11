@@ -13,12 +13,18 @@ order_lines = Table(
     Column("quantity", Integer, nullable=False),
     Column("order_id", String(255)),
 )
+products = Table(
+    "products",
+    metadata,
+    Column("sku", String(255), primary_key=True),
+    Column("version_number", Integer, nullable=False, server_default="0"),
+)
 
 batches = Table(
     "batches",
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("sku", String(255)),
+    Column("sku", ForeignKey("products.sku")),
     Column("reference", String(255)),
     Column("_purchased_quantity", Integer, nullable=False),
     Column("eta", Date, nullable=True),
@@ -34,7 +40,7 @@ allocations = Table(
 
 def start_mappers():
     lines_mapper = mapper(model.OrderLine, order_lines)
-    mapper(
+    batches_mapper=mapper(
         model.Batch, 
         batches, properties = {
             "_allocations" : relationship(
@@ -43,3 +49,6 @@ def start_mappers():
             collection_class=set,
         )
     },)
+    mapper(
+        model.Product, products, properties={"batches":relationship(batches_mapper)}
+    )

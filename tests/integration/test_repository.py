@@ -30,6 +30,10 @@ def insert_order_line(session):
 
 def insert_batch(session, batch_id):
     session.execute(
+        "INSERT OR IGNORE INTO products (sku)"
+        ' VALUES ("GENERIC-SOFA")',
+    )
+    session.execute(
         "INSERT INTO batches (reference, sku, _purchased_quantity, eta)"
         ' VALUES (:batch_id, "GENERIC-SOFA", 100, null)',
         dict(batch_id=batch_id),
@@ -58,7 +62,7 @@ def test_repository_can_retrieve_a_batch_with_allocations(session):
     insert_allocation(session, order_line_id, batch_1_id)
 
     repo = repository.SqlAlchemyRepository(session)
-    retrieved = repo.get("batch1")
+    retrieved = repo.get("GENERIC-SOFA").batches[0]
 
     expected = model.Batch("batch1", "GENERIC-SOFA", 100, eta=None)
     assert retrieved == expected
