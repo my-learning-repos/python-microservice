@@ -1,9 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
-from typing import Optional, List, Set
+from typing import Optional, List
 
-from domain import events
+from allocation.domain import events
 
 
 class OutOfStock(Exception):

@@ -1,4 +1,4 @@
-from domain import model
+from allocation.domain import model
 from datetime import date
 
 
@@ -18,7 +18,7 @@ def test_order_line_mapper_can_load_lines(session):
 
 
 def test_order_line_mapper_can_save_lines(session):
-    new_line = model.OrderLine("order1", "DECORATIVE-WIDGET",12)
+    new_line = model.OrderLine("order1", "DECORATIVE-WIDGET", 12)
     session.add(new_line)
     session.commit()
 
@@ -52,7 +52,7 @@ def test_saving_batches(session):
 
 
 def test_saving_allocations(session):
-    line = model.OrderLine("order1", "sku1",12)
+    line = model.OrderLine("order1", "sku1", 12)
     batch = model.Batch("batch1", "sku1", 100, eta=None)
     batch.allocate(line)
     session.add(batch)

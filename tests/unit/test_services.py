@@ -1,10 +1,9 @@
 from unittest import mock
 
 import pytest
-from domain import model
-from adapters import repository
-from service_layer import services
-from service_layer import unit_of_work
+from src.allocation.adapters import repository
+from src.allocation.service_layer import services
+from src.allocation.service_layer import unit_of_work
 
 
 class FakeRepository(repository.AbstractRepository):
@@ -74,7 +73,7 @@ def test_sends_email_on_out_of_stock_error():
     uow = FakeUnitOfWork()
     services.add_batch("batch1", "COMPLICATED-LAMP", 9, None, uow)
 
-    with mock.patch("adapters.email.send_mail") as mock_send_email:
+    with mock.patch("allocation.adapters.email.send_mail") as mock_send_email:
         services.allocate("01", "COMPLICATED-LAMP", 10, uow)
         assert mock_send_email.call_args == mock.call(
             "stock@made.com",

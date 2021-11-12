@@ -3,8 +3,8 @@ import time
 import traceback
 
 import pytest
-from domain import model
-from service_layer import unit_of_work
+from allocation.domain import model
+from allocation.service_layer import unit_of_work
 from tests.e2e.test_api import random_sku, random_batchref, random_order_id
 
 

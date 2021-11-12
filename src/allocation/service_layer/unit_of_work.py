@@ -4,9 +4,9 @@ import abc
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import config
-from adapters import repository
-from service_layer import messagebus
+from allocation import config
+from allocation.adapters import repository
+from allocation.service_layer import messagebus
 
 
 class AbstractUnitOfWork(abc.ABC):

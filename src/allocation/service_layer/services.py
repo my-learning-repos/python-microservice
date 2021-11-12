@@ -3,10 +3,8 @@ from __future__ import annotations
 from datetime import date
 from typing import Optional
 
-from domain import model
-from domain.model import OrderLine
-from adapters.repository import AbstractRepository
-from service_layer import unit_of_work
+from allocation.domain import model
+from allocation.service_layer import unit_of_work
 
 
 class InvalidSku(Exception):
