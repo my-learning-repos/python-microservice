@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from domain import model
 from adapters import repository
@@ -7,12 +9,13 @@ from service_layer import unit_of_work
 
 class FakeRepository(repository.AbstractRepository):
     def __init__(self, products):
+        super().__init__()
         self._products = set(products)
 
-    def add(self, product):
+    def _add(self, product):
         self._products.add(product)
 
-    def get(self, sku):
+    def _get(self, sku):
         return next((p for p in self._products if p.sku == sku), None)
 
 
@@ -22,7 +25,7 @@ class FakeUnitOfWork(unit_of_work.AbstractUnitOfWork):
         self.products = FakeRepository([])
         self.committed = False
 
-    def commit(self):
+    def _commit(self):
         self.committed = True
 
     def rollback(self):
@@ -41,7 +44,8 @@ def test_add_batch_for_existing_product():
     services.add_batch("b1", "CRUNCHY-ARMCHAIR", 100, None, uow)
     services.add_batch("b2", "CRUNCHY-ARMCHAIR", 10, None, uow)
 
-    assert "b2" in [b.reference for b in uow.products.get("CRUNCHY-ARMCHAIR").batches]
+    assert "b2" in [b.reference for b in
+                    uow.products.get("CRUNCHY-ARMCHAIR").batches]
 
 
 def test_returns_allocations():
@@ -64,3 +68,15 @@ def test_commits():
     result = services.allocate("o1", "COMPLICATED-LAMP", 10, uow)
     assert result == "batch1"
     assert uow.committed is True
+
+
+def test_sends_email_on_out_of_stock_error():
+    uow = FakeUnitOfWork()
+    services.add_batch("batch1", "COMPLICATED-LAMP", 9, None, uow)
+
+    with mock.patch("adapters.email.send_mail") as mock_send_email:
+        services.allocate("01", "COMPLICATED-LAMP", 10, uow)
+        assert mock_send_email.call_args == mock.call(
+            "stock@made.com",
+            f"Out of stock for COMPLICATED-LAMP"
+        )
