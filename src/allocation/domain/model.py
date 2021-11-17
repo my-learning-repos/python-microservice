@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional, List
 
-from allocation.domain import events
+from allocation.domain import events, commands
 
 
 class OutOfStock(Exception):
@@ -35,7 +35,7 @@ class Product:
         while batch.available_quantity < 0:
             line = batch.deallocate_one()
             self.events.append(
-                events.AllocationRequired(line.order_id, line.sku,
+                commands.Allocate(line.order_id, line.sku,
                                           line.quantity)
             )
 

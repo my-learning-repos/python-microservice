@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from allocation import config
-from allocation.domain import model, events
+from allocation.domain import model, events, commands
 from allocation.adapters import orm, repository
 from allocation.service_layer import handlers
 from allocation.service_layer import unit_of_work
@@ -24,7 +24,7 @@ def allocate_endpoint():
     repo = repository.SqlAlchemyRepository(session)
 
     try:
-        event = events.AllocationRequired(request.json["order_id"],
+        event = commands.Allocate(request.json["order_id"],
                                      request.json["sku"],
                                      request.json["quantity"]
                                      )
@@ -43,11 +43,11 @@ def add_batch():
     eta = request.json["eta"]
     if eta is not  None:
         eta = datetime.fromisoformat(eta).date()
-    event = events.BatchCreated(
+    command = commands.CreateBatch(
         request.json["ref"],
         request.json["sku"],
         request.json["quantity"],
         eta,
     )
-    messagebus.handle(event, unit_of_work.SqlAlchemyUnitOfWork())
+    messagebus.handle(command, unit_of_work.SqlAlchemyUnitOfWork())
     return "OK", 201
