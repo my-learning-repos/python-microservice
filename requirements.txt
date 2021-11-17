@@ -1,0 +1,8 @@
+Flask==2.0.2
+psycopg2-binary==2.9.2
+SQLAlchemy==1.4.27
+pytest==6.2.5
+pytest-icdiff==0.5
+mypy==0.910
+mypy-extensions==0.4.3
+requests==2.26.0
