@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Union, List
-
+from tenacity import Retrying, RetryError, stop_after_attempt, wait_exponential
 from allocation.domain import events, commands
 from . import handlers
 
@@ -29,9 +29,14 @@ def handle_event(event: events.Event, queue: List[Message],
                  uow: unit_of_work.AbstractUnitOfWork):
     for handler in EVENT_HANDLERS[type(event)]:
         try:
-            handler(event, uow=uow)
-            queue.extend(uow.collect_new_events())
-        except Exception:
+            for attempt in Retrying(
+                stop=stop_after_attempt(3),
+                wait=wait_exponential()
+            ):
+                with attempt:
+                    handler(event, uow=uow)
+                    queue.extend(uow.collect_new_events())
+        except RetryError as retry_failure:
             continue
 
 
