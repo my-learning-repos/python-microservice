@@ -11,7 +11,8 @@ class OutOfStock(Exception):
 
 
 class Product:
-    def __init__(self, sku: str, batches: List[Batch], version_number: int = 0):
+    def __init__(self, sku: str, batches: List[Batch],
+                 version_number: int = 0):
         self.sku = sku
         self.batches = batches
         self.version_number = version_number
@@ -19,13 +20,25 @@ class Product:
 
     def allocate(self, line: OrderLine) -> str:
         try:
-            batch = next(b for b in sorted(self.batches) if b.can_allocate(line))
+            batch = next(
+                b for b in sorted(self.batches) if b.can_allocate(line))
             batch.allocate(line)
             self.version_number += 1
             return batch.reference
         except StopIteration:
             self.events.append(events.OutOfStock(line.sku))
             return None
+
+    def change_batch_quantity(self, ref: str, quantity: int):
+        batch = next(b for b in self.batches if b.reference == ref)
+        batch._purchased_quantity = quantity
+        while batch.available_quantity < 0:
+            line = batch.deallocate_one()
+            self.events.append(
+                events.AllocationRequired(line.order_id, line.sku,
+                                          line.quantity)
+            )
+
 
 @dataclass(unsafe_hash=True)
 class OrderLine:
@@ -83,3 +96,6 @@ class Batch:
 
     def can_allocate(self, line: OrderLine) -> bool:
         return self.sku == line.sku and self.available_quantity >= line.quantity
+
+    def deallocate_one(self) -> OrderLine:
+        return self._allocations.pop()
