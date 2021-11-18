@@ -8,3 +8,11 @@ class Event:
 @dataclass
 class OutOfStock(Event):
     sku: str
+
+
+@dataclass
+class Allocated(Event):
+    order_id: str
+    sku: str
+    quantity: int
+    batchref: str

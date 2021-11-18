@@ -52,6 +52,7 @@ def handle_command(command: commands.Command, queue: List[Message],
 
 
 EVENT_HANDLERS = {
+    events.Allocated:[handlers.publish_allocated_event],
     events.OutOfStock: [handlers.send_out_of_stock_notification],
 }
 COMMAND_HANDLERS = {
