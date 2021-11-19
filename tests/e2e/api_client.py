@@ -16,6 +16,10 @@ def post_to_allocate(order_id, sku, quantity, expect_success=True):
         f"{config.get_api_url()}/allocate", json={
             "order_id": order_id, "sku": sku, "quantity": quantity})
     if expect_success:
-        assert r.status_code == 201
+        assert r.status_code == 202
 
     return r
+
+
+def get_allocation(order_id):
+    return requests.get(f"{config.get_api_url()}/allocations/{order_id}")

@@ -30,8 +30,8 @@ def handle_event(event: events.Event, queue: List[Message],
     for handler in EVENT_HANDLERS[type(event)]:
         try:
             for attempt in Retrying(
-                stop=stop_after_attempt(3),
-                wait=wait_exponential()
+                    stop=stop_after_attempt(3),
+                    wait=wait_exponential()
             ):
                 with attempt:
                     handler(event, uow=uow)
@@ -52,7 +52,13 @@ def handle_command(command: commands.Command, queue: List[Message],
 
 
 EVENT_HANDLERS = {
-    events.Allocated:[handlers.publish_allocated_event],
+    events.Allocated: [
+        handlers.publish_allocated_event,
+        handlers.add_allocation_to_read_model],
+    events.Deallocated: [
+        handlers.remove_allocation_from_read_model,
+        handlers.reallocate
+    ],
     events.OutOfStock: [handlers.send_out_of_stock_notification],
 }
 COMMAND_HANDLERS = {
