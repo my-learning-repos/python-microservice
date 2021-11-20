@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from allocation.adapters import email, redis_eventpublisher
 from allocation.domain import events, commands
+from allocation.adapters import notifications
 
 from allocation.domain import model
 
@@ -34,15 +35,14 @@ def add_batch(cmd: commands.CreateBatch, uow: unit_of_work.AbstractUnitOfWork
 
 def allocate(
         cmd: commands.Allocate, uow: unit_of_work.AbstractUnitOfWork
-) -> str:
+):
     line = model.OrderLine(cmd.order_id, cmd.sku, cmd.quantity)
     with uow:
         product = uow.products.get(sku=line.sku)
         if product is None:
             raise InvalidSku(f"Invalid sku {line.sku}")
-        batchref = product.allocate(line)
+        product.allocate(line)
         uow.commit()
-    return batchref
 
 
 def reallocate(event: events.Deallocated, uow:unit_of_work.SqlAlchemyUnitOfWork):
@@ -63,9 +63,9 @@ def change_batch_quantity(
 
 def send_out_of_stock_notification(
         event: events.OutOfStock,
-        uow: unit_of_work.AbstractUnitOfWork
+        notifications: notifications.AbstractNotification
 ):
-    email.send_mail(
+    notifications.send(
         "stock@made.com",
         f"Out of stock for {event.sku}"
     )
@@ -101,3 +101,19 @@ def remove_allocation_from_read_model(
             dict(orderid=event.order_id, sku=event.sku)
         )
         uow.commit()
+
+EVENT_HANDLERS = {
+    events.Allocated: [
+        publish_allocated_event,
+        add_allocation_to_read_model],
+    events.Deallocated: [
+        remove_allocation_from_read_model,
+        reallocate
+    ],
+    events.OutOfStock: [send_out_of_stock_notification],
+}
+COMMAND_HANDLERS = {
+    commands.CreateBatch: add_batch,
+    commands.ChangeBatchQuantity: change_batch_quantity,
+    commands.Allocate: allocate,
+}

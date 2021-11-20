@@ -6,16 +6,15 @@ from sqlalchemy.orm import sessionmaker
 
 from allocation import config
 from allocation.domain import commands
-from allocation.adapters import orm, repository
+from allocation.adapters import repository
 from allocation.service_layer import unit_of_work
-from allocation.service_layer import messagebus
 from allocation.service_layer.handlers import InvalidSku
-from allocation import views
+from allocation import views, bootstrap
 
-orm.start_mappers()
 get_session = sessionmaker(bind=create_engine(config.get_postgres_uri()))
 
 app = Flask(__name__)
+bus = bootstrap.bootstrap()
 
 
 @app.route("/allocate", methods=["POST"])
@@ -24,15 +23,13 @@ def allocate_endpoint():
     repo = repository.SqlAlchemyRepository(session)
 
     try:
-        event = commands.Allocate(request.json["order_id"],
+        command = commands.Allocate(request.json["order_id"],
                                   request.json["sku"],
                                   request.json["quantity"]
                                   )
-        results = messagebus.handle(event, unit_of_work.SqlAlchemyUnitOfWork())
-        batchref = results.pop(0)
+        bus.handle(command)
     except InvalidSku as e:
         return {"message": str(e)}, 400
-
     return "ok", 202
 
 
@@ -49,7 +46,7 @@ def add_batch():
         request.json["quantity"],
         eta,
     )
-    messagebus.handle(command, unit_of_work.SqlAlchemyUnitOfWork())
+    bus.handle(command)
     return "OK", 201
 
 
@@ -57,7 +54,6 @@ def add_batch():
 def allocations_view_endpoint(order_id):
     uow = unit_of_work.SqlAlchemyUnitOfWork()
     result = views.allocations(order_id, uow)
-    print("result", result)
     if not result:
         return "not found", 404
     return jsonify(result), 200
